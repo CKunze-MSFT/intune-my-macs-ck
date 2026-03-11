@@ -49,6 +49,10 @@ EXCEL_APP="/Applications/Microsoft Excel.app"
 POWERPOINT_APP="/Applications/Microsoft PowerPoint.app"
 OUTLOOK_APP="/Applications/Microsoft Outlook.app"
 
+# How long to wait for Office apps to be installed (seconds between checks / max attempts)
+WAIT_INTERVAL=60      # seconds between each check
+WAIT_MAX_ATTEMPTS=30  # total attempts (30 × 60s = 30 minutes)
+
 ################################################################################
 #  HELPERS
 ################################################################################
@@ -122,9 +126,34 @@ else
   echo ">>> utiluti already installed."
 fi
 
-# 2. Verify Office apps exist
-for APP in "$WORD_APP" "$EXCEL_APP" "$POWERPOINT_APP" "$OUTLOOK_APP"; do
-  [[ -d "$APP" ]] || { echo ">>> ERROR: $APP not found."; exit 1; }  # Replace _log usage with echo
+# 2. Wait for Office apps to be installed
+OFFICE_APPS=("$WORD_APP" "$EXCEL_APP" "$POWERPOINT_APP" "$OUTLOOK_APP")
+attempt=0
+while true; do
+  missing=()
+  for APP in "${OFFICE_APPS[@]}"; do
+    [[ -d "$APP" ]] || missing+=("$APP")
+  done
+
+  if [[ ${#missing[@]} -eq 0 ]]; then
+    echo ">>> All Office apps detected."
+    break
+  fi
+
+  attempt=$((attempt + 1))
+  if [[ $attempt -gt $WAIT_MAX_ATTEMPTS ]]; then
+    echo ">>> Timed out after $((WAIT_MAX_ATTEMPTS * WAIT_INTERVAL / 60)) minutes waiting for Office apps."
+    echo ">>> Still missing: ${missing[*]}"
+    echo ">>> Exiting with code 1 so Intune will retry later."
+    exit 1
+  fi
+
+  echo ">>> Waiting for Office apps (attempt $attempt/$WAIT_MAX_ATTEMPTS)…"
+  for APP in "${missing[@]}"; do
+    echo ">>>   Missing: $APP"
+  done
+  echo ">>> Next check in ${WAIT_INTERVAL}s…"
+  sleep "$WAIT_INTERVAL"
 done
 
 # 3. Resolve bundle IDs (needed by utiluti)
