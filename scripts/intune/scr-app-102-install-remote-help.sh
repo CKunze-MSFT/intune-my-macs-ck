@@ -51,7 +51,7 @@
 
 # User Defined variables
 mauurl="https://go.microsoft.com/fwlink/?linkid=830196"                         # URL to fetch latest MAU
-weburl="https://aka.ms/downloadremotehelp"                                      # What is the Azure Blob Storage URL?
+weburl="https://aka.ms/downloadremotehelpmacos"                                 # What is the Azure Blob Storage URL?
 appname="Remote Help"                                                           # The name of our App deployment script (also used for Octory monitor)
 app="Remote Help.app"                                                           # The actual name of our App once installed
 logandmetadir="/Library/Logs/Microsoft/IntuneScripts/installRemoteHelp"         # The location of our logs and last updated data
@@ -181,12 +181,10 @@ downloadApp () {
     echo "$(date) | Downloading $appname [$weburl]"
 
     cd "$tempdir"
-    curl -f -s --connect-timeout 30 --retry 5 --retry-delay 60 --compressed -L -J -O "$weburl"
+    tempfile="$appname.pkg"
+    curl -f -s --connect-timeout 30 --retry 5 --retry-delay 60 --compressed -L -o "$tempfile" "$weburl"
     if [[ $? == 0 ]]; then
-        for f in *; do
-            tempfile=$f
-            echo "$(date) | Found downloaded tempfile [$tempfile]"
-        done
+        echo "$(date) | Downloaded to [$tempfile]"
         case $tempfile in
             *.pkg|*.PKG|*.mpkg|*.MPKG)
                 packageType="PKG"
