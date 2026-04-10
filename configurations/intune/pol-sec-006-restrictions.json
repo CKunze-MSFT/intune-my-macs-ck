@@ -621,7 +621,7 @@
                                 "settingInstanceTemplateReference": null,
                                 "choiceSettingValue": {
                                     "settingValueTemplateReference": null,
-                                    "value": "com.apple.applicationaccess_allowpasswordautofill_false",
+                                    "value": "com.apple.applicationaccess_allowpasswordautofill_true",
                                     "children": []
                                 }
                             },
@@ -841,7 +841,7 @@
                                 "settingInstanceTemplateReference": null,
                                 "choiceSettingValue": {
                                     "settingValueTemplateReference": null,
-                                    "value": "com.apple.applicationaccess_safariallowautofill_false",
+                                    "value": "com.apple.applicationaccess_safariallowautofill_true",
                                     "children": []
                                 }
                             }

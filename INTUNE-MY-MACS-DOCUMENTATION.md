@@ -54,7 +54,6 @@ Click any reference ID to jump to detailed configuration.
 | [pol-sys-104-ddm-passcode](#pol-sys-104-ddm-passcode-policy) | Policy | 11 |
 | [pol-sys-105-enrollment-restriction](#pol-sys-105-enrollment-restriction-policy) | Policy | 6 |
 | [scr-app-100-install-company-portal](#scr-app-100-install-company-portal-script) | Script | 4 |
-| [scr-app-101-office-defaults](#scr-app-101-office-defaults-script) | Script | 4 |
 | [scr-app-102-install-remote-help](#scr-app-102-install-remote-help-script) | Script | 4 |
 | [scr-app-103-install-intunelogwatch](#scr-app-103-install-intunelogwatch-script) | Script | 4 |
 | [scr-sec-100-install-escrow-buddy](#scr-sec-100-install-escrow-buddy-script) | Script | 4 |
@@ -530,21 +529,6 @@ Enforces passcode requirements including length, complexity, failed attempts, an
 Downloads and installs Microsoft Company Portal from a signed PKG. Automatically installs Microsoft Auto Update (MAU) first and ensures Rosetta 2 is present on Apple Silicon. Performs intelligent update checking via HTTP Last-Modified headers to avoid unnecessary reinstalls.
 
 **Source:** `scripts/intune/scr-app-100-install-company-portal.sh`  
-**Settings:** 4
-
-| Key | Value |
-|-----|-------|
-| `RunAsAccount` | `system` |
-| `BlockExecutionNotifications` | `true` |
-| `ExecutionFrequency` | `PT0S` |
-| `RetryCount` | `3` |
-
-
-### scr-app-101-office-defaults (Script)
-
-Configures Microsoft Office applications (Word, Excel, PowerPoint, Outlook) as the default handlers for all Office-related document types and URL schemes. Automatically installs utiluti v1.1 if not present and runs associations in the current user context via launchctl.
-
-**Source:** `scripts/intune/scr-app-101-office-defaults.sh`  
 **Settings:** 4
 
 | Key | Value |

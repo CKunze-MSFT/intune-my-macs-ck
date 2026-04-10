@@ -52,7 +52,16 @@ pwsh ./mainScript.ps1 --assign-group "Intune Mac Pilot" --apply
 | `--prefix "[custom]"` | Override the default naming prefix |
 | `--mde` | Include the `mde/` content (requires onboarding file) |
 | `--remove-all` | Delete previously created objects that use the current prefix |
+| `--tenant-id "GUID"` | Specify the Entra tenant ID for Microsoft Graph connection |
 | `--apply` | Actually create/update/delete Intune objects (otherwise it's a preview) |
+
+### Multi-tenant example
+
+To deploy into a specific tenant, pass the `--tenant-id` flag:
+
+```bash
+pwsh ./mainScript.ps1 --tenant-id "12345678-1234-1234-1234-123456789012" --assign-group "Intune Mac Pilot" --apply
+```
 
 ---
 
@@ -74,10 +83,38 @@ For the full artifact catalog and settings, see `INTUNE-MY-MACS-DOCUMENTATION.md
 
 ---
 
+## ⛔ Do NOT use Dynamic Device Groups for assignment
+
+> **NOT SUPPORTED — Dynamic device groups must not be used for policy assignment with this project.**
+
+Dynamic device groups (e.g. rules based on `device.deviceOSType` or `device.deviceManufacturer`) introduce unpredictable delays during enrollment. Entra ID must first register the device, then evaluate the dynamic membership rule, and then Intune must check in — this chain means **policies may not arrive until well after the user reaches the desktop**, defeating "Await Configuration Done" and skipping critical policies like FileVault and passcode requirements.
+
+**Instead, use one of these supported approaches:**
+
+| Approach | How |
+|----------|-----|
+| **Assignment filters (recommended)** | Assign to **All Users** or **All Devices** and add a device assignment filter using `(device.enrollmentProfileName -eq "Your macOS Enrollment Profile")`. This ensures policies apply **before first sign-in**. |
+| **Static groups** | Create a static (assigned-membership) Entra security group and add devices manually or via automation. |
+
+Assignment filters are evaluated at policy delivery time with no group-evaluation delay, making them the most reliable option for enrollment-time policy targeting.
+
+---
+
 ## Troubleshooting at a glance
 - **`Connect-MgGraph` not recognized:** The Microsoft Graph SDK installs automatically on first run. If it fails, install manually: `Install-Module Microsoft.Graph.Authentication -Scope CurrentUser`.
 - **Auth or permission errors:** Re-run `pwsh ./mainScript.ps1` after confirming the Graph permissions above; modules auto-install per user.
 - **Devices not receiving policies:** Verify APNS, device enrollment, and group membership, then force a device sync.
+
+---
+
+## Changelog
+
+| Date | Change | Details |
+|------|--------|---------|
+| 2026-04-10 | **Removed** SCR-APP-101 (Set Office Default Applications) | macOS 26.4 requires user consent for every default-app change. The `utiluti`-based script now triggers multiple confirmation prompts per user, making silent deployment impossible. See [utiluti#10](https://github.com/scriptingosx/utiluti/issues/10). |
+| 2026-04-10 | **Fixed** POL-SEC-006 passkey autofill blocking | Changed `allowPasswordAutoFill` and `safariAllowAutoFill` to `true` so users can enable "AutoFill Passwords and Passkeys" during device registration. Fixes [#17](https://github.com/microsoft/intune-my-macs/issues/17). |
+| 2026-04-10 | **Fixed** POL-APP-100 deprecated MAU data collection value | Changed `AcknowledgedDataCollectionPolicy` from the deprecated "send required and optional data" to "send required data". Prevents MAU from repeatedly prompting users. Fixes [#15](https://github.com/microsoft/intune-my-macs/issues/15). |
+| 2026-04-10 | **Added** guidance against dynamic device groups | Dynamic device groups cause unpredictable enrollment delays. README now documents assignment filters as the recommended approach. Fixes [#14](https://github.com/microsoft/intune-my-macs/issues/14). |
 
 ---
 
