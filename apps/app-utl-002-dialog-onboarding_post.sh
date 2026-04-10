@@ -16,8 +16,6 @@
 logDir="/Library/Logs/Microsoft/IntuneScripts/Swift Dialog"
 DIALOG_BIN="/usr/local/bin/dialog"
 DIALOG_CMD="/var/tmp/dialog.log"
-PKG_PATH="/var/tmp/dialog.pkg"
-PKG_URL="https://github.com/swiftDialog/swiftDialog/releases/download/v2.5.2/dialog-2.5.2-4777.pkg"
 MONITOR_TIMEOUT_MINUTES=60
 POLL_INTERVAL_SECONDS=5
 
@@ -51,12 +49,10 @@ if [[ -f "$logDir/onboardingComplete" ]]; then
     exit 0
 fi
 
-# Check/Install SwiftDialog
+# Check for SwiftDialog (do not install)
 if [[ ! -f "$DIALOG_BIN" ]]; then
-    echo "$(date) | POST | Swift Dialog not installed. Installing..."
-    curl -L -o "$PKG_PATH" "$PKG_URL"
-    sudo installer -pkg "$PKG_PATH" -target /
-    rm -f "$PKG_PATH"
+    echo "$(date) | POST | ERROR: Swift Dialog not installed. Please ensure Swift Dialog is deployed before running this script."
+    exit 1
 else
     echo "$(date) | POST | Swift Dialog already installed."
 fi

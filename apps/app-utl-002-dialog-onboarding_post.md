@@ -52,8 +52,8 @@ The script monitors for these Microsoft applications:
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
-│  2. Install Swift Dialog if missing     │
-│     (downloads from GitHub releases)    │
+│  2. Check for Swift Dialog              │
+│     (exit with error if not installed)  │
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
@@ -112,7 +112,7 @@ All output is logged to:
 
 ## Dependencies
 
-- **Swift Dialog v2.5.2** - Auto-installed if not present
+- **Swift Dialog v2.5.2+** - Must be pre-installed (deploy via [app-utl-001-swift-dialog.xml](app-utl-001-swift-dialog.xml))
 - **zsh** - Required for associative array support (macOS default shell)
 - Icon file: `/Library/Application Support/SwiftDialogResources/icons/msft.png`
 
@@ -120,6 +120,7 @@ All output is logged to:
 
 | Condition | Behavior |
 |-----------|----------|
+| Swift Dialog not installed | Exits with error code 1 |
 | Onboarding already complete | Exits immediately (flag file exists) |
 | All apps detected | Shows success, enables Continue button |
 | Timeout reached | Marks missing apps as errors, enables Continue button |
