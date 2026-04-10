@@ -49,13 +49,6 @@ if [[ -f "$logDir/onboardingComplete" ]]; then
     exit 0
 fi
 
-# Wait for Desktop/Dock
-echo "$(date) | POST | Waiting for Dock..."
-until pgrep -x Dock >/dev/null 2>&1; do
-    sleep 1
-done
-echo "$(date) | POST | Dock is running."
-
 # Function to check if an app is installed
 check_app_installed() {
     local app_bundle="$1"

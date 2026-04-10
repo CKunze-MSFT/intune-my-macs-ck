@@ -52,19 +52,14 @@ The script monitors for these Microsoft applications:
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
-│  2. Wait for Dock process               │
-│     (ensures desktop is ready)          │
-└───────────────┬─────────────────────────┘
-                ▼
-┌─────────────────────────────────────────┐
-│  3. Launch Swift Dialog UI              │
+│  2. Launch Swift Dialog UI              │
 │     - Full screen blur                  │
 │     - Progress bar                      │
 │     - List of pending apps              │
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
-│  4. Monitoring Loop                     │
+│  3. Monitoring Loop                     │
 │     - Check each app every 5 seconds    │
 │     - Update UI on detection            │
 │     - Continue until all found or       │
@@ -72,7 +67,7 @@ The script monitors for these Microsoft applications:
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
-│  5. Finalize                            │
+│  4. Finalize                            │
 │     - Show completion message           │
 │     - Enable "Continue" button          │
 │     - Write onboardingComplete flag     │
