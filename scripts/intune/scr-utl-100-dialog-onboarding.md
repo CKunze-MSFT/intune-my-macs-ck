@@ -9,6 +9,7 @@ This shell script monitors for macOS application installations and displays a re
 ## Purpose
 
 When deployed via Intune, this script provides visual feedback to users during the device onboarding process by:
+
 1. Waiting for the desktop to be ready (Dock and Finder running)
 2. Waiting for Swift Dialog binary to become available
 3. Displaying a full-screen Swift Dialog window with a list of expected applications
@@ -21,7 +22,7 @@ When deployed via Intune, this script provides visual feedback to users during t
 ### Key Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| -------- | ------- | ----------- |
 | `DESKTOP_TIMEOUT_MINUTES` | 15 | Maximum time to wait for desktop |
 | `DIALOG_WAIT_MINUTES` | 20 | Maximum time to wait for Dialog binary |
 | `MONITOR_TIMEOUT_MINUTES` | 60 | Maximum time to wait for all apps |
@@ -34,7 +35,7 @@ When deployed via Intune, this script provides visual feedback to users during t
 The script monitors for these Microsoft applications:
 
 | Application | Bundle Path | Package Receipt ID |
-|-------------|-------------|-------------------|
+| ----------- | ----------- | ------------------ |
 | Company Portal | `/Applications/Company Portal.app` | `com.microsoft.CompanyPortalMac` |
 | Microsoft Edge | `/Applications/Microsoft Edge.app` | `com.microsoft.edgemac` |
 | Microsoft 365 Copilot | `/Applications/Microsoft 365 Copilot.app` | `com.microsoft.m365copilot` |
@@ -49,7 +50,7 @@ The script monitors for these Microsoft applications:
 
 ## Script Flow
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │  1. Check if onboarding already done    │
 │     (exit if /onboardingComplete exists)│
@@ -87,6 +88,7 @@ The script monitors for these Microsoft applications:
 ## Detection Logic
 
 An application is considered installed if **either**:
+
 - The application bundle directory exists (e.g., `/Applications/Microsoft Word.app`)
 - The package receipt is registered with `pkgutil`
 
@@ -106,7 +108,8 @@ This dual-check approach handles both drag-and-drop installs and PKG-based insta
 ## Logging
 
 All output is logged to:
-```
+
+```text
 /Library/Logs/Microsoft/IntuneScripts/Swift Dialog/onboarding.log
 ```
 
@@ -118,7 +121,7 @@ All output is logged to:
 ## Exit Conditions
 
 | Condition | Behavior |
-|-----------|----------|
+| --------- | -------- |
 | Onboarding already complete | Exits immediately (flag file exists) |
 | Desktop timeout | Exits with error code 1 |
 | Dialog binary timeout | Exits with error code 1 |
@@ -142,7 +145,8 @@ Then paste the output as the `MSFT_ICON` value in the script.
 ### Adding/Removing Monitored Apps
 
 Edit the `APPS_TO_MONITOR` array in the script. Each entry follows this format:
-```
+
+```text
 "Display Name|/path/to/App.app|com.package.receipt.id"
 ```
 
