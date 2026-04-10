@@ -52,24 +52,19 @@ The script monitors for these Microsoft applications:
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
-│  2. Check for Swift Dialog              │
-│     (exit with error if not installed)  │
-└───────────────┬─────────────────────────┘
-                ▼
-┌─────────────────────────────────────────┐
-│  3. Wait for Dock process               │
+│  2. Wait for Dock process               │
 │     (ensures desktop is ready)          │
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
-│  4. Launch Swift Dialog UI              │
+│  3. Launch Swift Dialog UI              │
 │     - Full screen blur                  │
 │     - Progress bar                      │
 │     - List of pending apps              │
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
-│  5. Monitoring Loop                     │
+│  4. Monitoring Loop                     │
 │     - Check each app every 5 seconds    │
 │     - Update UI on detection            │
 │     - Continue until all found or       │
@@ -77,7 +72,7 @@ The script monitors for these Microsoft applications:
 └───────────────┬─────────────────────────┘
                 ▼
 ┌─────────────────────────────────────────┐
-│  6. Finalize                            │
+│  5. Finalize                            │
 │     - Show completion message           │
 │     - Enable "Continue" button          │
 │     - Write onboardingComplete flag     │
@@ -112,7 +107,7 @@ All output is logged to:
 
 ## Dependencies
 
-- **Swift Dialog v2.5.2+** - Must be pre-installed (deploy via [app-utl-001-swift-dialog.xml](app-utl-001-swift-dialog.xml))
+- **Swift Dialog v2.5.2+** - Must be pre-installed (verified by pre-install script, deploy via [app-utl-001-swift-dialog.xml](app-utl-001-swift-dialog.xml))
 - **zsh** - Required for associative array support (macOS default shell)
 - Icon file: `/Library/Application Support/SwiftDialogResources/icons/msft.png`
 
@@ -120,7 +115,6 @@ All output is logged to:
 
 | Condition | Behavior |
 |-----------|----------|
-| Swift Dialog not installed | Exits with error code 1 |
 | Onboarding already complete | Exits immediately (flag file exists) |
 | All apps detected | Shows success, enables Continue button |
 | Timeout reached | Marks missing apps as errors, enables Continue button |

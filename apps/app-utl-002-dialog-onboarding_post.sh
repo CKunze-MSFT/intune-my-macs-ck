@@ -49,14 +49,6 @@ if [[ -f "$logDir/onboardingComplete" ]]; then
     exit 0
 fi
 
-# Check for SwiftDialog (do not install)
-if [[ ! -f "$DIALOG_BIN" ]]; then
-    echo "$(date) | POST | ERROR: Swift Dialog not installed. Please ensure Swift Dialog is deployed before running this script."
-    exit 1
-else
-    echo "$(date) | POST | Swift Dialog already installed."
-fi
-
 # Wait for Desktop/Dock
 echo "$(date) | POST | Waiting for Dock..."
 until pgrep -x Dock >/dev/null 2>&1; do
