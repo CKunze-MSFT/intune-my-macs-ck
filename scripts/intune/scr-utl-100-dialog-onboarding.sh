@@ -1,12 +1,13 @@
 #!/bin/zsh
 ############################################################################################
 ##
-## Post-install Script for Swift Dialog - App Installation Monitor
+## Swift Dialog - App Installation Monitor
 ## 
-## VER 2.0.1
+## VER 2.1.0
 ##
-## Purpose: Monitors for app installations (via app bundle or package receipt) and
-##          updates Swift Dialog UI in real-time. Does NOT install apps.
+## Purpose: Waits for Swift Dialog availability, then monitors for app installations
+##          (via app bundle or package receipt) and updates Swift Dialog UI in real-time.
+##          Does NOT install apps.
 ##
 ## Note: Uses zsh for macOS associative array support (bash 3.2 doesn't support them)
 ##
@@ -18,6 +19,9 @@ DIALOG_BIN="/usr/local/bin/dialog"
 DIALOG_CMD="/var/tmp/dialog.log"
 MONITOR_TIMEOUT_MINUTES=60
 POLL_INTERVAL_SECONDS=2
+DIALOG_WAIT_MINUTES=20
+DESKTOP_TIMEOUT_MINUTES=15
+SLEEP_SECONDS=5
 
 # Microsoft logo (base64 encoded PNG)
 # To replace this icon, convert your image to base64 with:
@@ -43,17 +47,87 @@ APPS_TO_MONITOR=(
 
 # Start Logging
 mkdir -p "$logDir"
-exec > >(tee -a "$logDir/postinstall.log") 2>&1
+exec > >(tee -a "$logDir/onboarding.log") 2>&1
 
-echo "$(date) | POST | =========================================="
-echo "$(date) | POST | Swift Dialog App Installation Monitor"
-echo "$(date) | POST | =========================================="
+echo "$(date) | =========================================="
+echo "$(date) | Swift Dialog App Installation Monitor"
+echo "$(date) | =========================================="
 
 # Check if we've run before
 if [[ -f "$logDir/onboardingComplete" ]]; then
-    echo "$(date) | POST | Onboarding already completed. Exiting."
+    echo "$(date) | Onboarding already completed. Exiting."
     exit 0
 fi
+
+############################################################################################
+## PHASE 1: Wait for Desktop
+############################################################################################
+
+WaitForDesktop() {
+    local timeout_epoch=$(( $(date +%s) + (DESKTOP_TIMEOUT_MINUTES * 60) ))
+    
+    echo "$(date) | PHASE 1 | Waiting for desktop (Dock process)..."
+    
+    while true; do
+        # Check if Dock is running (indicates desktop is loaded)
+        if pgrep -x "Dock" >/dev/null 2>&1; then
+            # Also verify Finder is running
+            if pgrep -x "Finder" >/dev/null 2>&1; then
+                echo "$(date) | PHASE 1 | Desktop ready (Dock and Finder running)"
+                sleep 2
+                return 0
+            fi
+        fi
+        
+        # Check timeout
+        if [[ $(date +%s) -ge $timeout_epoch ]]; then
+            echo "$(date) | PHASE 1 | Timeout waiting for desktop after ${DESKTOP_TIMEOUT_MINUTES} minutes"
+            return 1
+        fi
+        
+        sleep $SLEEP_SECONDS
+    done
+}
+
+if ! WaitForDesktop; then
+    echo "$(date) | ERROR | Failed to detect desktop, exiting"
+    exit 1
+fi
+
+############################################################################################
+## PHASE 2: Wait for Swift Dialog Binary
+############################################################################################
+
+WaitForDialog() {
+    local end_epoch=$(( $(date +%s) + (DIALOG_WAIT_MINUTES * 60) ))
+    
+    echo "$(date) | PHASE 2 | Waiting for $DIALOG_BIN (timeout ${DIALOG_WAIT_MINUTES}m)"
+    
+    while true; do
+        if [[ -x "$DIALOG_BIN" ]]; then
+            echo "$(date) | PHASE 2 | Found executable: $DIALOG_BIN"
+            return 0
+        fi
+        
+        if [[ $(date +%s) -ge $end_epoch ]]; then
+            echo "$(date) | PHASE 2 | Timeout after ${DIALOG_WAIT_MINUTES} minutes waiting for $DIALOG_BIN"
+            return 1
+        fi
+        
+        sleep $SLEEP_SECONDS
+    done
+}
+
+if ! WaitForDialog; then
+    echo "$(date) | ERROR | Swift Dialog not available, exiting"
+    exit 1
+fi
+
+############################################################################################
+## PHASE 3: Launch Dialog and Monitor App Installations
+############################################################################################
+
+echo "$(date) | PHASE 3 | Starting app installation monitoring"
 
 # Function to check if an app is installed
 check_app_installed() {
@@ -107,7 +181,7 @@ for app_entry in "${APPS_TO_MONITOR[@]}"; do
 done
 
 # Launch Swift Dialog
-echo "$(date) | POST | Launching Swift Dialog..."
+echo "$(date) | PHASE 3 | Launching Swift Dialog..."
 killall Dialog 2>/dev/null
 
 /usr/local/bin/dialog \
@@ -131,7 +205,7 @@ if ! ps -p $DIALOG_PID >/dev/null 2>&1; then
     echo "$(date) | ERROR | Failed to launch Swift Dialog"
     exit 1
 fi
-echo "$(date) | POST | Swift Dialog launched (PID: $DIALOG_PID)"
+echo "$(date) | PHASE 3 | Swift Dialog launched (PID: $DIALOG_PID)"
 
 # Initialize tracking associative array (zsh syntax)
 typeset -A app_status
@@ -145,8 +219,8 @@ end_epoch=$(( $(date +%s) + (MONITOR_TIMEOUT_MINUTES * 60) ))
 apps_installed=0
 total_apps=${#APPS_TO_MONITOR[@]}
 
-echo "$(date) | POST | Starting app monitoring (timeout: ${MONITOR_TIMEOUT_MINUTES}m, interval: ${POLL_INTERVAL_SECONDS}s)"
-echo "$(date) | POST | Monitoring ${total_apps} applications..."
+echo "$(date) | PHASE 3 | Starting app monitoring (timeout: ${MONITOR_TIMEOUT_MINUTES}m, interval: ${POLL_INTERVAL_SECONDS}s)"
+echo "$(date) | PHASE 3 | Monitoring ${total_apps} applications..."
 
 # Main monitoring loop
 while true; do
@@ -162,7 +236,7 @@ while true; do
         fi
         
         if check_app_installed "$app_bundle" "$pkg_receipt"; then
-            echo "$(date) | POST | DETECTED: $app_name"
+            echo "$(date) | PHASE 3 | DETECTED: $app_name"
             app_status[$app_name]="installed"
             ((apps_installed++))
             update_dialog_item "$app_name" "success" "Installed"
@@ -173,19 +247,19 @@ while true; do
     
     # Check if all apps are installed
     if [[ $apps_installed -ge $total_apps ]]; then
-        echo "$(date) | POST | All applications detected!"
+        echo "$(date) | PHASE 3 | All applications detected!"
         break
     fi
     
     # Check timeout
     now=$(date +%s)
     if [[ $now -ge $end_epoch ]]; then
-        echo "$(date) | POST | Timeout reached after ${MONITOR_TIMEOUT_MINUTES} minutes"
+        echo "$(date) | PHASE 3 | Timeout reached after ${MONITOR_TIMEOUT_MINUTES} minutes"
         # Mark remaining apps as timed out
         for app_entry in "${APPS_TO_MONITOR[@]}"; do
             app_name="${app_entry%%|*}"
             if [[ "${app_status[$app_name]}" != "installed" ]]; then
-                echo "$(date) | POST | TIMEOUT: $app_name not detected"
+                echo "$(date) | PHASE 3 | TIMEOUT: $app_name not detected"
                 update_dialog_item "$app_name" "error" "Not detected"
             fi
         done
@@ -195,32 +269,35 @@ while true; do
     sleep $POLL_INTERVAL_SECONDS
 done
 
-# Update dialog to completion state
-echo "$(date) | POST | Finalizing..."
+############################################################################################
+## PHASE 4: Finalize
+############################################################################################
+
+echo "$(date) | PHASE 4 | Finalizing..."
 sleep 2
 
 if [[ $apps_installed -ge $total_apps ]]; then
     update_dialog_progress_text "Setup complete! All applications installed."
     echo "button1text: Continue" >> "$DIALOG_CMD"
     echo "button1: enable" >> "$DIALOG_CMD"
-    echo "$(date) | POST | SUCCESS: All $total_apps applications installed"
+    echo "$(date) | PHASE 4 | SUCCESS: All $total_apps applications installed"
 else
     update_dialog_progress_text "Setup complete. $apps_installed of $total_apps applications installed."
     echo "button1text: Continue" >> "$DIALOG_CMD"
     echo "button1: enable" >> "$DIALOG_CMD"
-    echo "$(date) | POST | PARTIAL: $apps_installed of $total_apps applications installed"
+    echo "$(date) | PHASE 4 | PARTIAL: $apps_installed of $total_apps applications installed"
 fi
 
 # Wait for user to dismiss dialog (with timeout)
-echo "$(date) | POST | Waiting for user to dismiss dialog..."
+echo "$(date) | PHASE 4 | Waiting for user to dismiss dialog..."
 wait $DIALOG_PID 2>/dev/null
 
 # Mark onboarding complete
 sudo touch "$logDir/onboardingComplete"
-echo "$(date) | POST | Onboarding complete flag written"
+echo "$(date) | PHASE 4 | Onboarding complete flag written"
 
 # Cleanup
 rm -f "$DIALOG_CMD"
 
-echo "$(date) | POST | Script finished"
+echo "$(date) | Script finished"
 exit 0
