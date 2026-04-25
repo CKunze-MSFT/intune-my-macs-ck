@@ -46,7 +46,7 @@ The recommended entry point on macOS is the GUI launcher. This launcher uses nat
 pwsh ./Start-IntuneMyMacs.ps1
 ```
 
-GUI walkthrough video: [IMM GUI.mov](./IMM%20GUI.mov)
+GUI walkthrough video: [IMM GUI.mp4](./IMM%20GUI.mp4)
 
 The launcher lets you:
 
