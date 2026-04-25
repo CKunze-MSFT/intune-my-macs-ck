@@ -40,6 +40,9 @@ $policyPrefix = "[intune-my-macs]"
 # tenant ID (optional, can be specified via --tenant-id)
 $tenantId = $null
 
+# GUI-supplied manifest name filter (comma-separated, set via --names)
+$filterNames = @()
+
 # Resolve repo root (script is now in repository root)
 $repoRoot = $PSScriptRoot
 if (-not $repoRoot) { $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path -ErrorAction Continue}
@@ -257,6 +260,7 @@ function Get-GroupIdByName {
 # Parse CLI args for selective processing
 $removeAll = $false
 $assignGroupName = $null
+$skipTerminalVerification = $false
 $argsLower = $args | ForEach-Object { $_.ToLowerInvariant() }
 
 # Check for help flag
@@ -302,8 +306,8 @@ if ($argsLower -contains '-h' -or $argsLower -contains '--help') {
 }
 
 if ($args.Count -gt 0) {
-    $knownFlags = @('--apps','--config','--compliance','--scripts','--custom-attributes','--enrollment','--show-all-scripts','--remove-all','--mde','-mde','--apply','--prefix','--assign-group','--tenant-id','-h','--help')
-    $valueFlags = @('--prefix','--assign-group','--tenant-id')
+    $knownFlags = @('--apps','--config','--compliance','--scripts','--custom-attributes','--enrollment','--show-all-scripts','--remove-all','--mde','-mde','--apply','--prefix','--assign-group','--tenant-id','--names','--skip-terminal-verification','-h','--help')
+    $valueFlags = @('--prefix','--assign-group','--tenant-id','--names')
     $unknownArgs = @(); $missingValueArgs = @()
     $idx = 0
     while ($idx -lt $args.Count) {
@@ -353,6 +357,7 @@ if ($argsLower.Count -gt 0) {
     $showAllScripts = $false
     if ($argsLower -contains '--show-all-scripts') { $showAllScripts = $true }
     if ($argsLower -contains '--remove-all') { $removeAll = $true }
+    if ($argsLower -contains '--skip-terminal-verification') { $skipTerminalVerification = $true }
     if ($argsLower -contains '--mde' -or $argsLower -contains '-mde') { $includeMde = $true }
     if ($argsLower -contains '--apply') { $applyChanges = $true }
     # Support both --param="Value" and --param "Value" forms
@@ -393,6 +398,18 @@ if ($argsLower.Count -gt 0) {
         }
         if ($null -ne $value) {
             $tenantId = $value.Trim('"')
+        }
+
+        # --names  (GUI-supplied comma-separated manifest name filter)
+        if ($arg -like '--names=*') {
+            $value = $arg.Substring(8)
+        } elseif ($arg -eq '--names' -and ($i + 1) -lt $args.Count) {
+            $value = $args[$i + 1]
+        } else {
+            $value = $null
+        }
+        if ($null -ne $value) {
+            $filterNames = $value.Trim('"') -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
         }
     }
     if (-not ($importPolicies -or $importPackages -or $importScripts -or $importCompliance -or $importCustomAttrs -or $importEnrollmentRestrictions)) {
@@ -657,8 +674,12 @@ function Remove-IntunePrefixedContent {
         return
     }
 
-    $confirmation = Read-Host -Prompt "Type YES to confirm deletion or anything else to cancel"
-    if ($confirmation -ne 'YES') { Write-Host "Deletion aborted by user." -ForegroundColor Yellow; return }
+    if ($skipTerminalVerification) {
+        Write-Host "Terminal confirmation skipped because the action was already confirmed by the GUI." -ForegroundColor DarkGray
+    } else {
+        $confirmation = Read-Host -Prompt "Type YES to confirm deletion or anything else to cancel"
+        if ($confirmation -ne 'YES') { Write-Host "Deletion aborted by user." -ForegroundColor Yellow; return }
+    }
 
     # Delete configuration policies
     foreach ($p in $policies) {
@@ -775,6 +796,13 @@ if (-not $includeMde) {
         exit 1
     }
     Write-Host "✓ MDE onboarding file found: cfg-mde-001-onboarding.mobileconfig" -ForegroundColor Green
+}
+
+# Apply GUI name filter if supplied via --names
+if ($filterNames -and $filterNames.Count -gt 0) {
+    $preName = $distributedItems.Count
+    $distributedItems = $distributedItems | Where-Object { $filterNames -contains $_.name }
+    Write-Host "GUI filter: limited to $($distributedItems.Count) of $preName manifests by name." -ForegroundColor DarkGray
 }
 
 if ($distributedItems.type -contains '' -or $distributedItems.type -contains $null) { Write-Error "One or more XML manifests invalid (missing Type)."; exit 1 }
