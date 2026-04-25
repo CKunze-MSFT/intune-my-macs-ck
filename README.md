@@ -40,7 +40,7 @@ cd intune-my-macs
 
 ## 4. Run the GUI launcher
 
-The recommended entry point is the GUI launcher:
+The recommended entry point on macOS is the GUI launcher. This launcher uses native macOS UI components and SwiftDialog, so it is not intended for Windows:
 
 ```bash
 pwsh ./Start-IntuneMyMacs.ps1
