@@ -46,6 +46,8 @@ The recommended entry point on macOS is the GUI launcher. This launcher uses nat
 pwsh ./Start-IntuneMyMacs.ps1
 ```
 
+GUI walkthrough video: [IMM GUI.mov](./IMM%20GUI.mov)
+
 The launcher lets you:
 
 - Enter a prefix.
