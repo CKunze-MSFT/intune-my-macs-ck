@@ -1462,6 +1462,9 @@ if ($importScripts) {
             # Use deviceShellScripts for macOS shell scripts to appear in Devices > macOS > Scripts
             $body = @{ 
                 '@odata.type' = '#microsoft.graph.deviceShellScript'
+                executionFrequency = $s.executionFrequency
+                retryCount = $s.retryCount
+                blockExecutionNotifications = $s.blockExecutionNotifications
                 displayName = $displayName
                 description = $s.description
                 scriptContent = $encoded
@@ -1472,7 +1475,7 @@ if ($importScripts) {
             if (-not $applyChanges) {
                 Write-Host "  - [dry-run] Would upload shell script '$displayName'." -ForegroundColor DarkGray
             } else {
-                $result = Invoke-MgGraphRequest -Method POST -Uri 'https://graph.microsoft.com/beta/deviceManagement/deviceShellScripts' -Body $json
+                $result = Invoke-MgGraphRequest -Method POST -Uri 'https://graph.microsoft.com/beta/deviceManagement/deviceShellScripts' -Body $json -ContentType 'application/json'
                 if ($result -and $result.id) { 
                     Write-Host "  - Script $($result.displayName) imported with ID: $($result.id)" -ForegroundColor Green 
                     $createdScriptIds += $result.id
